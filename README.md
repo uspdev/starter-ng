@@ -10,7 +10,7 @@ Ou com Docker:
       -v $(pwd):/app \
       -u $(id -u):$(id -g) \
       composer:latest \
-      composer create-project uspdev/starter-ng exemploapp
+      composer create-project laravel/laravel exemploapp
 
 Este projeto possui instalado e configurado:
 
@@ -25,3 +25,22 @@ Este projeto possui instalado e configurado:
 ### Se for rodar o senhaunica-faker é necessário em `/etc/hosts`:
 
     127.0.0.1 auth.local
+
+
+### Desenvolvimento
+
+Para incluir novos recursos e testar localmente, suponha que você esteja na pasta meus-projetos:
+
+    meus-projetos
+    ├── starter-ng # Essa lib
+    └── (novo projeto vai ser criado aqui depois do commando abaixo)
+
+Rode na pasta meus-projetos:
+
+    docker run --rm -it \
+    -v $(pwd):/app \
+    -u $(id -u):$(id -g) \
+    composer:latest \
+    composer create-project uspdev/starter-ng exemploapp \
+    --repository='{"type": "path", "url": "/app/starter-ng", "options": {"symlink": false}}' \
+    --stability=dev
