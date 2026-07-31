@@ -36,20 +36,20 @@ class SetupScript
                 $source = $tempFolder . '/' . $item;
                 $target = $projectPath . '/' . $item;
 
-                // FORÇA a sobrescrita do .gitignore para garantir o padrão do Laravel!
-                if ($item === '.gitignore') {
+                // Força a cópia do .gitignore e do composer.json oficiais do Laravel!
+                if ($item === '.gitignore' || $item === 'composer.json') {
                     copy($source, $target);
                     continue;
                 }
 
-                // Para os demais arquivos/pastas, move apenas se não existir no destino
+                // Para os demais arquivos/pastas, move se não existir
                 if (!file_exists($target)) {
                     rename($source, $target);
                 }
             }
-            // Remove o diretorio temporario
             self::recursiveRmdir($tempFolder);
         }
+
 
         $io->write("<info>========================================</info>");
         $io->write("<info>2. Aplicando customizacoes USPDev: {$projectName}...</info>");
@@ -72,6 +72,7 @@ class SetupScript
         $io->write("<info>========================================</info>");
 
         // 7. Requer pacotes adicionais do USPDev
+        exec('composer update');
         exec('composer require uspdev/laravel-usp-theme uspdev/senhaunica-socialite');
 
         // 8. Publica assets e roda migracoes se o artisan existir
