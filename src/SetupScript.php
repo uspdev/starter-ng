@@ -26,24 +26,28 @@ class SetupScript
         // 4. Copia e aplica todos os Stubs (Infra, Views, Controller, Rotas e o README da raiz)
         self::applyStubs($projectPath, $projectName);
 
-        // 5. Publica assets da lib de tema
-        exec('php artisan vendor:publish --provider="Uspdev\UspTheme\ServiceProvider" --tag=config');
+        // 5. Publica assets da lib de tema (se o artisan estiver disponível)
+        if (file_exists($path . '/artisan')) {
+            exec('php artisan vendor:publish --provider="Uspdev\UspTheme\ServiceProvider" --tag=config');
+        }
 
         // 6. Instala o senhaunica-socialite APÓS a Model User estar com as traits
         $io->write("<info>Instalando uspdev/senhaunica-socialite...</info>");
         exec('composer require uspdev/senhaunica-socialite');
 
         // 7. Publica migrações e executa
-        exec('php artisan vendor:publish --provider="Uspdev\SenhaunicaSocialite\SenhaunicaServiceProvider" --tag="migrations"');
-        exec('php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"');
-        exec('php artisan migrate');
+        if (file_exists($path . '/artisan')) {
+            exec('php artisan vendor:publish --provider="Uspdev\SenhaunicaSocialite\SenhaunicaServiceProvider" --tag="migrations"');
+            exec('php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"');
+            exec('php artisan migrate');
 
-        // 8. Configura Dusk
-        exec('php artisan dusk:install');
-        exec('php artisan dusk:chrome-driver');
+            // 8. Configura Dusk
+            exec('php artisan dusk:install');
+            exec('php artisan dusk:chrome-driver');
 
-        // 9. Gerar chave da aplicação
-        exec('php artisan key:generate');
+            // 9. Gerar chave da aplicação
+            exec('php artisan key:generate');
+        }
 
         $io->write("<info>Projeto {$projectName} configurado com sucesso!</info>");
     }
@@ -58,7 +62,10 @@ class SetupScript
 
     private static function updateUserModel(string $path)
     {
-        $userModelPath = $path . '/app/Models/User.php';
+        $userModelDir = $path . '/app/Models';
+        @mkdir($userModelDir, 0755, true);
+
+        $userModelPath = $userModelDir . '/User.php';
         if (!file_exists($userModelPath)) return;
 
         $content = file_get_contents($userModelPath);
@@ -72,9 +79,10 @@ class SetupScript
 
     private static function applyStubs(string $path, string $projectName)
     {
-        // Garante a existência dos diretórios de destino
+        // Garante a existência de TODOS os diretórios de destino necessários
         @mkdir($path . '/resources/views', 0755, true);
         @mkdir($path . '/app/Http/Controllers', 0755, true);
+        @mkdir($path . '/routes', 0755, true);
 
         // Mapeamento dos stubs para suas localizações finais
         $stubMap = [
@@ -95,7 +103,7 @@ class SetupScript
             }
         }
 
-        // Processa o README.md que já está na raiz do projeto
+        // Processa o README.md que está na raiz do projeto
         $readmePath = $path . '/README.md';
         if (file_exists($readmePath)) {
             $readmeContent = file_get_contents($readmePath);
@@ -103,11 +111,17 @@ class SetupScript
             file_put_contents($readmePath, $readmeContent);
         }
 
-        // Anexa o stub de rotas ao final do web.php
+        // Garante a gravação ou anexo no routes/web.php
         $routeStub = $path . '/stubs/web_routes.php.stub';
         if (file_exists($routeStub)) {
             $routeContent = file_get_contents($routeStub);
-            file_put_contents($path . '/routes/web.php', $routeContent, FILE_APPEND);
+            $webRoutePath = $path . '/routes/web.php';
+            
+            // Se o web.php não existir, cria um arquivo PHP básico primeiro
+            if (!file_exists($webRoutePath)) {
+                file_put_contents($webRoutePath, "<?php\n");
+            }
+            file_put_contents($webRoutePath, $routeContent, FILE_APPEND);
         }
 
         // Limpa e remove a pasta stubs do projeto final
@@ -122,12 +136,12 @@ class SetupScript
 
         $envContent = file_get_contents($stubPath);
 
-        // Prepara o conteúdo do .env.example substituindo MEU_APP
+        // Prepara e grava o .env.example
         $envExampleContent = str_replace('MEU_APP', $projectName, $envContent);
-        file_put_contents($path . '/.env.example', $envExampleContent, FILE_APPEND);
+        file_put_contents($path . '/.env.example', $envExampleContent);
 
-        // Prepara o conteúdo do .env (com APP_URL para localhost:8000)
+        // Prepara e grava o .env (com APP_URL para localhost:8000)
         $envLocalContent = str_replace("APP_URL=http://{$projectName}", "APP_URL=http://127.0.0.1:8000", $envExampleContent);
-        file_put_contents($path . '/.env', $envLocalContent, FILE_APPEND);
+        file_put_contents($path . '/.env', $envLocalContent);
     }
 }

@@ -2,6 +2,10 @@
 
 Criando uma aplicação laravel `exemploapp`: 
 
+    composer create-project uspdev/starter-ng exemploapp
+
+Ou com Docker:
+
     docker run --rm -it \
       -v $(pwd):/app \
       -u $(id -u):$(id -g) \
