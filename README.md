@@ -12,6 +12,9 @@ Ou com Docker:
       composer:latest \
       composer create-project uspdev/starter-ng exemploapp
 
+      cd exemploapp
+      docker compose up --build -d
+
 Este projeto possui instalado e configurado:
 
 - **Laravel Framework**
