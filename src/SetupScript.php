@@ -131,7 +131,7 @@ class SetupScript
 
     private static function setupEnvironmentFiles(string $path, string $projectName)
     {
-        $stubPath = $path . '/stubs/.env.stub';
+        $stubPath = $path . '/stubs/env.stub';
         if (!file_exists($stubPath)) return;
 
         $envContent = file_get_contents($stubPath);
