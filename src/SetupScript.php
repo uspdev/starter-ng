@@ -10,7 +10,7 @@ class SetupScript
     {
         $io = $event->getIO();
         
-        // Fixa o caminho absoluto real da raiz do novo projeto
+        // Caminho absoluto real da raiz do projeto
         $projectPath = realpath(getcwd());
         $projectName = basename($projectPath);
 
@@ -20,14 +20,13 @@ class SetupScript
 
         $tempFolder = $projectPath . '/_laravel_temp';
 
-        // 1. Baixa o Laravel oficial na pasta temporaria sem rodar scripts/install
+        // 1. Baixa a estrutura oficial do Laravel na pasta temporária
         exec("composer create-project laravel/laravel \"{$tempFolder}\" --prefer-dist --no-scripts --no-install");
 
-        // GARANTIA: Retorna para o diretorio raiz caso o composer tenha mudado o CWD
+        // GARANTIA: Retorna para o diretório raiz
         chdir($projectPath);
 
-
-        // 2. Mover arquivos do Laravel temporario para a raiz
+        // 2. Mover arquivos do Laravel temporário para a raiz
         if (is_dir($tempFolder)) {
             $items = scandir($tempFolder);
             foreach ($items as $item) {
@@ -36,13 +35,13 @@ class SetupScript
                 $source = $tempFolder . '/' . $item;
                 $target = $projectPath . '/' . $item;
 
-                // Força a cópia do .gitignore e do composer.json oficiais do Laravel!
+                // Sobrescreve o .gitignore e o composer.json do starter pelos oficiais do Laravel!
                 if ($item === '.gitignore' || $item === 'composer.json') {
                     copy($source, $target);
                     continue;
                 }
 
-                // Para os demais arquivos/pastas, move se não existir
+                // Move demais pastas e arquivos (app, config, routes, public, etc)
                 if (!file_exists($target)) {
                     rename($source, $target);
                 }
@@ -50,32 +49,31 @@ class SetupScript
             self::recursiveRmdir($tempFolder);
         }
 
-
         $io->write("<info>========================================</info>");
-        $io->write("<info>2. Aplicando customizacoes USPDev: {$projectName}...</info>");
+        $io->write("<info>2. Aplicando customizações USPDev: {$projectName}...</info>");
         $io->write("<info>========================================</info>");
 
-        // 3. Anexa as regras ao .gitignore (que acabou de ser trazido do Laravel)
+        // 3. Anexa regras USPDev no .gitignore oficial
         self::updateGitignore($projectPath);
 
         // 4. Configura .env e .env.example usando o stub
         self::setupEnvironmentFiles($projectPath, $projectName);
 
-        // 5. Aplica Stubs (Views, Controllers, Docker) e ANEXA rotas ao routes/web.php
+        // 5. Aplica Stubs (Views, Controller, Docker) e sobrescreve routes/web.php
         self::applyStubs($projectPath, $projectName);
 
-        // 6. Atualiza a Model User.php com as Traits do SenhaUnica
+        // 6. Atualiza a Model User.php com as Traits do SenhaÚnica
         self::updateUserModel($projectPath);
 
         $io->write("<info>========================================</info>");
-        $io->write("<info>3. Instalando pacotes e dependencias...</info>");
+        $io->write("<info>3. Instalando pacotes e gerando autoloader...</info>");
         $io->write("<info>========================================</info>");
 
-        // 7. Requer pacotes adicionais do USPDev
+        // 7. Instala o framework Laravel e requer pacotes USPDev
         exec('composer update');
         exec('composer require uspdev/laravel-usp-theme uspdev/senhaunica-socialite');
 
-        // 8. Publica assets e roda migracoes se o artisan existir
+        // 8. Publica assets, gera chaves e roda migrações
         if (file_exists($projectPath . '/artisan')) {
             exec('php artisan vendor:publish --provider="Uspdev\UspTheme\ServiceProvider" --tag=config');
             exec('php artisan vendor:publish --provider="Uspdev\SenhaunicaSocialite\SenhaunicaServiceProvider" --tag="migrations"');
@@ -84,7 +82,11 @@ class SetupScript
             exec('php artisan key:generate');
         }
 
-        // 9. Limpa arquivos do instalador do starter
+        // 9. DUMP AUTOLOAD para mapear todas as novas classes e controllers gerados!
+        $io->write("<info>Otimizando e reconstruindo autoloader do Composer...</info>");
+        exec('composer dump-autoload -o');
+
+        // 10. Limpa o instalador do starter
         @unlink($projectPath . '/src/SetupScript.php');
         @rmdir($projectPath . '/src');
 
@@ -97,7 +99,6 @@ class SetupScript
         if (file_exists($gitignoreFile)) {
             $content = file_get_contents($gitignoreFile);
 
-            // Anexa as linhas apenas se ainda nao existirem
             if (!str_contains($content, 'composer.lock')) {
                 $extraContent = "\n# Regras USPDev\ncomposer.lock\npublic/vendor\n";
                 file_put_contents($gitignoreFile, $extraContent, FILE_APPEND);
@@ -139,14 +140,14 @@ class SetupScript
         @mkdir($path . '/app/Http/Controllers', 0755, true);
         @mkdir($path . '/routes', 0755, true);
 
-        // Mapeamento dos stubs que SOBRESCREVEM completamente os arquivos
+        // Stubs que SOBRESCREVEM os arquivos de destino
         $stubMap = [
             'Dockerfile.stub'          => $path . '/Dockerfile',
             'docker-compose.yml.stub'  => $path . '/docker-compose.yml',
             'IndexController.php.stub' => $path . '/app/Http/Controllers/IndexController.php',
             'layout.blade.php.stub'    => $path . '/resources/views/layout.blade.php',
             'index.blade.php.stub'     => $path . '/resources/views/index.blade.php',
-            'web_routes.php.stub'      => $path . '/routes/web.php', // <--- Sobrescreve o web.php do Laravel
+            'web_routes.php.stub'      => $path . '/routes/web.php',
         ];
 
         foreach ($stubMap as $stubFile => $destination) {
@@ -154,11 +155,11 @@ class SetupScript
             if (file_exists($source)) {
                 $content = file_get_contents($source);
                 $content = str_replace('MEU_APP', $projectName, $content);
-                file_put_contents($destination, $content); // Sobrescreve o conteúdo original
+                file_put_contents($destination, $content);
             }
         }
 
-        // Limpa a pasta stubs
+        // Limpa a pasta stubs do projeto final
         array_map('unlink', glob("$path/stubs/*.*"));
         @rmdir($path . '/stubs');
     }
