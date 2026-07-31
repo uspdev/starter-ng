@@ -10,7 +10,7 @@ Ou com Docker:
       -v $(pwd):/app \
       -u $(id -u):$(id -g) \
       composer:latest \
-      composer create-project laravel/laravel exemploapp
+      composer create-project uspdev/starter-ng exemploapp
 
 Este projeto possui instalado e configurado:
 
