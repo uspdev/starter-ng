@@ -27,7 +27,7 @@ class SetupScript
         self::applyStubs($projectPath, $projectName);
 
         // 5. Publica assets da lib de tema (se o artisan estiver disponível)
-        if (file_exists($path . '/artisan')) {
+        if (file_exists($projectPath . '/artisan')) {
             exec('php artisan vendor:publish --provider="Uspdev\UspTheme\ServiceProvider" --tag=config');
         }
 
@@ -36,7 +36,7 @@ class SetupScript
         exec('composer require uspdev/senhaunica-socialite');
 
         // 7. Publica migrações e executa
-        if (file_exists($path . '/artisan')) {
+        if (file_exists($projectPath . '/artisan')) {
             exec('php artisan vendor:publish --provider="Uspdev\SenhaunicaSocialite\SenhaunicaServiceProvider" --tag="migrations"');
             exec('php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"');
             exec('php artisan migrate');
@@ -117,7 +117,6 @@ class SetupScript
             $routeContent = file_get_contents($routeStub);
             $webRoutePath = $path . '/routes/web.php';
             
-            // Se o web.php não existir, cria um arquivo PHP básico primeiro
             if (!file_exists($webRoutePath)) {
                 file_put_contents($webRoutePath, "<?php\n");
             }
