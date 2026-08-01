@@ -111,13 +111,37 @@ class SetupScript
         $stubPath = $path . '/stubs/env.stub';
         if (!file_exists($stubPath)) return;
 
-        $envContent = file_get_contents($stubPath);
-        $envExampleContent = str_replace('MEU_APP', $projectName, $envContent);
-        
-        file_put_contents($path . '/.env.example', $envExampleContent);
+        // Leste o conteúdo das suas variáveis customizadas (USPDev)
+        $customEnvContent = file_get_contents($stubPath);
+        $customEnvContent = str_replace('MEU_APP', $projectName, $customEnvContent);
 
-        $envLocalContent = str_replace("APP_URL=http://{$projectName}", "APP_URL=http://127.0.0.1:8000", $envExampleContent);
-        file_put_contents($path . '/.env', $envLocalContent);
+        // Prepara o bloco a ser anexado
+        $appendContent = "\n\n# ========================================\n";
+        $appendContent .= "# Configurações Adicionais USPDev\n";
+        $appendContent .= "# ========================================\n";
+        $appendContent .= $customEnvContent;
+
+        // 1. Anexa no .env.example (trazido pelo Laravel)
+        $envExamplePath = $path . '/.env.example';
+        if (file_exists($envExamplePath)) {
+            $currentExample = file_get_contents($envExamplePath);
+            // Anexa apenas se ainda não tiver as variáveis USPDev
+            if (!str_contains($currentExample, 'USPDev')) {
+                file_put_contents($envExamplePath, $appendContent, FILE_APPEND);
+            }
+        }
+
+        // 2. Se o .env não existir na raiz, copia a partir do .env.example já atualizado
+        $envPath = $path . '/.env';
+        if (!file_exists($envPath) && file_exists($envExamplePath)) {
+            copy($envExamplePath, $envPath);
+        } elseif (file_exists($envPath)) {
+            // Se o .env já existia, anexa nele também
+            $currentEnv = file_get_contents($envPath);
+            if (!str_contains($currentEnv, 'USPDev')) {
+                file_put_contents($envPath, $appendContent, FILE_APPEND);
+            }
+        }
     }
 
     private static function updateUserModel(string $path)
