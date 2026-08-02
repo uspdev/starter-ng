@@ -9,19 +9,19 @@ class SetupScript
     public static function postCreateProject(Event $event)
     {
         $io = $event->getIO();
-        
+
         // Caminho absoluto real da raiz do projeto
         $projectPath = realpath(getcwd());
         $projectName = basename($projectPath);
 
         $io->write("<info>========================================</info>");
-        $io->write("<info>1. Baixando e mesclando Laravel oficial...</info>");
+        $io->write("<info>1. Baixando Laravel oficial</info>");
         $io->write("<info>========================================</info>");
 
         $tempFolder = $projectPath . '/_laravel_temp';
 
         // 1. Baixa a estrutura oficial do Laravel na pasta temporária
-        exec("composer create-project laravel/laravel \"{$tempFolder}\" --prefer-dist --no-scripts --no-install");
+        self::run("composer create-project laravel/laravel \"{$tempFolder}\" --prefer-dist --no-scripts --no-install");
 
         // GARANTIA: Retorna para o diretório raiz
         chdir($projectPath);
@@ -50,7 +50,7 @@ class SetupScript
         }
 
         $io->write("<info>========================================</info>");
-        $io->write("<info>2. Aplicando customizações USPDev: {$projectName}...</info>");
+        $io->write("<info>2. Aplicando customizações USPDev para projeto: {$projectName}</info>");
         $io->write("<info>========================================</info>");
 
         // 3. Anexa regras USPDev no .gitignore oficial
@@ -66,31 +66,28 @@ class SetupScript
         self::updateUserModel($projectPath);
 
         $io->write("<info>========================================</info>");
-        $io->write("<info>3. Instalando pacotes e gerando autoloader...</info>");
+        $io->write("<info>3. Instalando pacotes e update</info>");
         $io->write("<info>========================================</info>");
 
         // 7. Instala o framework Laravel e requer pacotes USPDev
-        exec('composer update');
-        exec('composer require uspdev/laravel-usp-theme uspdev/senhaunica-socialite');
+        self::run('composer update');
+        self::run('composer require uspdev/laravel-usp-theme');
+        self::run('composer require uspdev/senhaunica-socialite');
 
         // 8. Publica assets, gera chaves e roda migrações
         if (file_exists($projectPath . '/artisan')) {
-            exec('php artisan vendor:publish --provider="Uspdev\UspTheme\ServiceProvider" --tag=config');
-            exec('php artisan vendor:publish --provider="Uspdev\SenhaunicaSocialite\SenhaunicaServiceProvider" --tag="migrations"');
-            exec('php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"');
-            exec('php artisan migrate');
-            exec('php artisan key:generate');
+            self::run('php artisan vendor:publish --provider="Uspdev\UspTheme\ServiceProvider" --tag=config');
+            self::run('php artisan vendor:publish --provider="Uspdev\SenhaunicaSocialite\SenhaunicaServiceProvider" --tag="migrations"');
+            self::run('php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"');
+            self::run('php artisan key:generate');
         }
-
-        // 9. DUMP AUTOLOAD para mapear todas as novas classes e controllers gerados!
-        $io->write("<info>Otimizando e reconstruindo autoloader do Composer...</info>");
-        exec('composer dump-autoload -o');
+        self::addPublishAssetsToComposer($projectPath);
 
         // 10. Limpa o instalador do starter
         @unlink($projectPath . '/src/SetupScript.php');
         @rmdir($projectPath . '/src');
 
-        $io->write("<info>🚀 Projeto {$projectName} criado e configurado com sucesso!</info>");
+        $io->write("<info>Projeto {$projectName} criado e configurado com sucesso!</info>");
     }
 
     private static function updateGitignore(string $path)
@@ -100,7 +97,7 @@ class SetupScript
             $content = file_get_contents($gitignoreFile);
 
             if (!str_contains($content, 'composer.lock')) {
-                $extraContent = "\n# Regras USPDev\ncomposer.lock\npublic/vendor\n";
+                $extraContent = "\n# uspdev-theme folder\npublic/vendor\n";
                 file_put_contents($gitignoreFile, $extraContent, FILE_APPEND);
             }
         }
@@ -111,7 +108,7 @@ class SetupScript
         $stubPath = $path . '/stubs/env.stub';
         if (!file_exists($stubPath)) return;
 
-        // Leste o conteúdo das suas variáveis customizadas (USPDev)
+        // Lê o conteúdo das variáveis customizadas (USPDev)
         $customEnvContent = file_get_contents($stubPath);
         $customEnvContent = str_replace('MEU_APP', $projectName, $customEnvContent);
 
@@ -135,12 +132,21 @@ class SetupScript
         $envPath = $path . '/.env';
         if (!file_exists($envPath) && file_exists($envExamplePath)) {
             copy($envExamplePath, $envPath);
-        } elseif (file_exists($envPath)) {
-            // Se o .env já existia, anexa nele também
-            $currentEnv = file_get_contents($envPath);
-            if (!str_contains($currentEnv, 'USPDev')) {
-                file_put_contents($envPath, $appendContent, FILE_APPEND);
+        }
+
+        // 3. Aplica as alterações exclusivas do .env
+        if (file_exists($envPath)) {
+            $envContent = file_get_contents($envPath);
+
+            // Substitui apenas no .env a linha APP_URL por http://127.0.0.1:8000
+            $envContent = preg_replace('/^APP_URL=.*$/m', 'APP_URL=http://127.0.0.1:8000', $envContent);
+
+            // Garante que o bloco USPDev seja anexado caso o .env já existia antes da cópia
+            if (!str_contains($envContent, 'USPDev')) {
+                $envContent .= $appendContent;
             }
+
+            file_put_contents($envPath, $envContent);
         }
     }
 
@@ -155,6 +161,47 @@ class SetupScript
             $traits = "    use \\Spatie\\Permission\\Traits\\HasRoles;\n    use \\Uspdev\\SenhaunicaSocialite\\Traits\\HasSenhaunica;\n\n    protected \$guard_name = 'senhaunica';\n";
             $content = preg_replace('/class User extends Authenticatable\s*\{/', "class User extends Authenticatable\n{\n{$traits}", $content);
             file_put_contents($userModelPath, $content);
+        }
+    }
+
+    private static function addPublishAssetsToComposer(string $path)
+    {
+        $composerPath = $path . '/composer.json';
+
+        if (!file_exists($composerPath)) {
+            return;
+        }
+
+        $jsonContent = file_get_contents($composerPath);
+        $composerData = json_decode($jsonContent, true);
+
+        if (!is_array($composerData)) {
+            return;
+        }
+
+        $command = '@php artisan vendor:publish --provider="Uspdev\\UspTheme\\ServiceProvider" --tag=assets --force';
+
+        // Garante que a estrutura de arrays exista
+        if (!isset($composerData['scripts'])) {
+            $composerData['scripts'] = [];
+        }
+
+        if (!isset($composerData['scripts']['post-autoload-dump'])) {
+            $composerData['scripts']['post-autoload-dump'] = [];
+        }
+
+        // Se o post-autoload-dump for apenas uma string simples no JSON, converte para array
+        if (is_string($composerData['scripts']['post-autoload-dump'])) {
+            $composerData['scripts']['post-autoload-dump'] = [$composerData['scripts']['post-autoload-dump']];
+        }
+
+        // Adiciona o comando apenas se ele ainda não existir no array
+        if (!in_array($command, $composerData['scripts']['post-autoload-dump'])) {
+            $composerData['scripts']['post-autoload-dump'][] = $command;
+
+            // Salva o composer.json formatado com recuo limpo
+            $updatedJson = json_encode($composerData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            file_put_contents($composerPath, $updatedJson);
         }
     }
 
@@ -204,4 +251,16 @@ class SetupScript
             rmdir($dir);
         }
     }
+
+    private static function run(string $cmd): void
+    {
+        $output = [];
+        $code = 0;
+        exec($cmd . ' 2>&1', $output, $code);
+        if ($code !== 0) {
+            throw new \RuntimeException("Falhou: $cmd\n" . implode("\n", $output));
+        }
+    }
+
+
 }

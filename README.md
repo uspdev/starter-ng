@@ -1,5 +1,17 @@
 # Starter Next Generation
 
+Gerador de projetos laravel no padrão USPdev. Esse projeto faz:
+
+- Instala a última versão do **Laravel**
+- Instala e configura o **Laravel USP Theme (`uspdev/laravel-usp-theme`)**
+- Instala e configura o **Senha Única Socialite (`uspdev/senhaunica-socialite`)**
+- Prepara um Dockerfile e docker-compose.yml básicos
+
+Na seção de dev do composer instala:
+
+**Laravel Dusk**
+- **Simple CRUD Generator (`uspdev/simple-crud-generator`)**: Gerador rápido de scaffolding.
+
 Criando uma aplicação laravel `exemploapp`: 
 
     composer create-project uspdev/starter-ng exemploapp
@@ -14,21 +26,14 @@ Ou com Docker:
 
       cd exemploapp
       docker compose up --build -d
+      docker exec -it exemploapp composer dump-autoload -o
+      docker exec -it exemploapp php artisan migrate
 
-Este projeto possui instalado e configurado:
-
-- **Laravel Framework**
-- **Laravel USP Theme (`uspdev/laravel-usp-theme`)**: Layout padrão institucional.
-- **Senha Única Socialite (`uspdev/senhaunica-socialite`)**: Autenticação OAuth1 integrada com `spatie/laravel-permission`.
-- **USP Replicado (`uspdev/replicado`)**: Conexão com bases corporativas USP.
-- **Laravel Dusk**: Testes de interface configurados.
-- **Simple CRUD Generator (`uspdev/simple-crud-generator`)**: Gerador rápido de scaffolding.
-- **Docker Stack**: Apache PHP, MariaDB 11, phpMyAdmin, Selenium e SenhaÚnica Faker.
+Acessar aplicação em [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ### Se for rodar o senhaunica-faker é necessário em `/etc/hosts`:
 
     127.0.0.1 auth.local
-
 
 ### Desenvolvimento
 
