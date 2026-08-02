@@ -6,6 +6,7 @@ Gerador de projetos laravel no padrão USPdev. Esse projeto faz:
 - Instala e configura o **Laravel USP Theme (`uspdev/laravel-usp-theme`)**
 - Instala e configura o **Senha Única Socialite (`uspdev/senhaunica-socialite`)**
 - Prepara um Dockerfile e docker-compose.yml básicos
+- Criar um IndexController, rota e blade para index
 
 Na seção de dev do composer instala:
 
@@ -15,6 +16,10 @@ Na seção de dev do composer instala:
 Criando uma aplicação laravel `exemploapp`: 
 
     composer create-project uspdev/starter-ng exemploapp
+    composer dump-autoload -o
+    echo '\nDB_CONNECTION=sqlite' >> .env
+    php artisan migrate --force
+    php artisan serve
 
 Ou com Docker:
 
