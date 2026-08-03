@@ -74,6 +74,13 @@ class SetupScript
         self::run('composer require uspdev/laravel-usp-theme');
         self::run('composer require uspdev/senhaunica-socialite');
 
+        # devs
+        self::run('composer req uspdev/simple-crud-generator --dev');
+        self::run('composer req laravel/dusk --dev');
+        self::run('php artisan dusk:install');
+        self::run('php artisan dusk:chrome-driver');
+
+
         // 8. Publica assets, gera chaves e roda migrações
         if (file_exists($projectPath . '/artisan')) {
             self::run('php artisan vendor:publish --provider="Uspdev\UspTheme\ServiceProvider" --tag=config');
