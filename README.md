@@ -29,10 +29,10 @@ Ou com Docker:
       composer:latest \
       composer create-project uspdev/starter-ng exemploapp
 
-      cd exemploapp
-      docker compose up --build -d
-      docker exec -it exemploapp composer dump-autoload -o
-      docker exec -it exemploapp php artisan migrate
+    cd exemploapp
+    docker compose up --build -d
+    docker exec -it exemploapp composer dump-autoload -o
+    docker exec -it exemploapp php artisan migrate
 
 Acessar aplicação em [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
@@ -51,9 +51,9 @@ Para incluir novos recursos e testar localmente, suponha que você esteja na pas
 Rode na pasta meus-projetos:
 
     docker run --rm -it \
-    -v $(pwd):/app \
-    -u $(id -u):$(id -g) \
-    composer:latest \
-    composer create-project uspdev/starter-ng exemploapp \
-    --repository='{"type": "path", "url": "/app/starter-ng", "options": {"symlink": false}}' \
-    --stability=dev
+      -v $(pwd):/app \
+      -u $(id -u):$(id -g) \
+      composer:latest \
+      composer create-project uspdev/starter-ng exemploapp \
+      --repository='{"type": "path", "url": "/app/starter-ng", "options": {"symlink": false}}' \
+      --stability=dev
