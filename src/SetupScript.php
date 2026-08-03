@@ -82,13 +82,6 @@ class SetupScript
         # dusk
         if (file_exists($projectPath . '/artisan')) {
             self::run('php artisan dusk:install');
-
-            // Tenta instalar o ChromeDriver, mas sem interromper o setup se falhar no ambiente local/Docker
-            try {
-                self::run('php artisan dusk:chrome-driver');
-            } catch (\Exception $e) {
-                $io->write("Aviso: Não foi possível baixar o ChromeDriver automaticamente. Instale-o manualmente depois.");
-            }
         }
 
         // 8. Publica assets, gera chaves e roda migrações
