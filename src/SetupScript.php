@@ -48,6 +48,7 @@ class SetupScript
             }
             self::recursiveRmdir($tempFolder);
         }
+        @unlink($projectPath . '/resources/views/welcome.blade.php');
 
         $io->write("<info>========================================</info>");
         $io->write("<info>2. Aplicando customizações USPDev para projeto: {$projectName}</info>");
@@ -75,11 +76,20 @@ class SetupScript
         self::run('composer require uspdev/senhaunica-socialite');
 
         # devs
-        self::run('composer req uspdev/simple-crud-generator --dev');
-        self::run('composer req laravel/dusk --dev');
-        self::run('php artisan dusk:install');
-        self::run('php artisan dusk:chrome-driver');
+        self::run('composer require uspdev/simple-crud-generator --dev');
+        self::run('composer require laravel/dusk --dev');
 
+        # dusk
+        if (file_exists($projectPath . '/artisan')) {
+            self::run('php artisan dusk:install');
+
+            // Tenta instalar o ChromeDriver, mas sem interromper o setup se falhar no ambiente local/Docker
+            try {
+                self::run('php artisan dusk:chrome-driver');
+            } catch (\Exception $e) {
+                $io->write("Aviso: Não foi possível baixar o ChromeDriver automaticamente. Instale-o manualmente depois.");
+            }
+        }
 
         // 8. Publica assets, gera chaves e roda migrações
         if (file_exists($projectPath . '/artisan')) {
