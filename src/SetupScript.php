@@ -168,7 +168,7 @@ class SetupScript
         $content = file_get_contents($userModelPath);
 
         if (!str_contains($content, 'HasSenhaunica')) {
-            $traits = "    use \\Spatie\\Permission\\Traits\\HasRoles;\n    use \\Uspdev\\SenhaunicaSocialite\\Traits\\HasSenhaunica;\n\n    protected \$guard_name = 'senhaunica';\n";
+            $traits = "    use \\Spatie\\Permission\\Traits\\HasRoles;\n    use \\Uspdev\\SenhaunicaSocialite\\Traits\\HasSenhaunica;\n";
             $content = preg_replace('/class User extends Authenticatable\s*\{/', "class User extends Authenticatable\n{\n{$traits}", $content);
             file_put_contents($userModelPath, $content);
         }
