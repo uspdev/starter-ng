@@ -72,12 +72,12 @@ class SetupScript
 
         // 7. Instala o framework Laravel e requer pacotes USPDev
         self::run('composer update');
-        self::run('composer require uspdev/laravel-usp-theme');
-        self::run('composer require uspdev/senhaunica-socialite');
+        self::run('composer require uspdev/laravel-usp-theme -W');
+        self::run('composer require uspdev/senhaunica-socialite -W');
 
         # devs
-        self::run('composer require uspdev/simple-crud-generator --dev');
-        self::run('composer require laravel/dusk --dev');
+        self::run('composer require uspdev/simple-crud-generator --dev -W');
+        self::run('composer require laravel/dusk --dev' -W);
 
         # dusk
         if (file_exists($projectPath . '/artisan')) {
