@@ -77,7 +77,7 @@ class SetupScript
 
         # devs
         self::run('composer require uspdev/simple-crud-generator --dev -W');
-        self::run('composer require laravel/dusk --dev' -W);
+        self::run('composer requirelaravel/dusk --dev -W');
 
         # dusk
         if (file_exists($projectPath . '/artisan')) {
