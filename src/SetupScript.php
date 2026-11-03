@@ -79,9 +79,15 @@ class SetupScript
         self::run('composer require uspdev/simple-crud-generator --dev -W');
         self::run('composer require laravel/dusk --dev -W');
 
-        # dusk
+        # libs gerais
+        self::run('composer require league/flysystem-aws-s3-v3 -W');
+
+        # artisan
         if (file_exists($projectPath . '/artisan')) {
             self::run('php artisan dusk:install');
+            self::run('php artisan session:table');
+            self::run('php artisan cache:table');
+            self::run('php artisan queue:table');
         }
 
         // 8. Publica assets, gera chaves e roda migrações
