@@ -85,9 +85,6 @@ class SetupScript
         # artisan
         if (file_exists($projectPath . '/artisan')) {
             self::run('php artisan dusk:install');
-            self::run('php artisan session:table');
-            self::run('php artisan cache:table');
-            self::run('php artisan queue:table');
         }
 
         // 8. Publica assets, gera chaves e roda migrações
